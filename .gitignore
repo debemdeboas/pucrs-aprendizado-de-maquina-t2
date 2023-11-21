@@ -1,0 +1,8 @@
+images/
+dist/
+.env
+*.pkl*
+*.csv
+*.xz
+
+__pycache__/
