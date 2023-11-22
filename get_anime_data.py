@@ -1,6 +1,7 @@
 import asyncio
 import os
 import pickle
+import random
 import timeit
 
 import aiohttp
@@ -8,14 +9,13 @@ import uvloop
 
 from schema import Anime, Genre, RateLimitError
 
-
-MAL_BASE_URL = "https://api.myanimelist.net/v2"
 JIKAN_BASE_URL = "https://api.jikan.moe"
 
 JIKAN_GET_TOP_ANIME_REQ_PARAMS = {
     "limit": 25,  # 25 is max
     "sfw": "true",
 }
+LIMIT = 30_000
 
 
 async def jikan_get_genres() -> list[Genre]:
@@ -70,6 +70,7 @@ async def jikan_get_top_anime(limit: int = 500) -> list[Anime]:
         ]
     ):
         animes.extend(await paged_animes)
+        print(f"Fetched {len(animes)} animes", end="\r")
 
     # Instead of returning animes[:limit], return everything that was fetched
     return animes
@@ -80,9 +81,9 @@ async def get_image(url: str) -> bytes:
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 return await response.read()
-    except OSError as e:
-        print(f"Error downloading image from {url}: {str(e)}")
-        await asyncio.sleep(5)
+    except Exception as e:
+        print(f"Error downloading image from {url}: {e}")
+        await asyncio.sleep(random.randint(3, 7))
         return await get_image(url)
 
 
@@ -92,13 +93,20 @@ async def download_anime_image(anime: Anime):
     if os.path.exists(fpath):
         return
 
-    with open(fpath, "wb") as f:
-        f.write(await get_image(anime.get_image_url()))
+    try:
+        # In order to not allocate a file handle until we need it, await the
+        # result of get_image() before opening the file
+        image = await get_image(anime.image_url)
+        with open(fpath, "wb") as f:
+            f.write(image)
+    except Exception as e:
+        print(f"FATAL: Error saving downloaded image to {fpath}: {e}")
+        await asyncio.sleep(random.randint(3, 7))
+        return await download_anime_image(anime)
 
 
 async def download_anime_images(animes: list[Anime]):
-    tasks = [download_anime_image(anime) for anime in animes]
-    await asyncio.gather(*tasks)
+    await asyncio.gather(*[download_anime_image(anime) for anime in animes])
 
 
 async def main():
@@ -111,7 +119,7 @@ async def main():
             animes = pickle.load(f)
     else:
         print("fetching animes from jikan api")
-        animes = await jikan_get_top_anime(limit=15_000)
+        animes = await jikan_get_top_anime(limit=LIMIT)
 
         # Save animes to a file as cache
         with open(animes_pkl, "wb") as f:

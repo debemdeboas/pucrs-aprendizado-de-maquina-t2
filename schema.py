@@ -36,7 +36,8 @@ class Anime:
     genres: set[Genre]
     source: str
 
-    def get_image_url(self) -> str:
+    @property
+    def image_url(self) -> str:
         if url := self.images["jpg"].get(
             "large_image_url", self.images["jpg"].get("image_url")
         ):
