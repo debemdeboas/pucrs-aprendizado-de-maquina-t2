@@ -12,7 +12,7 @@ Autores:
 
 ## Instruções
 
-O código fonte está disponível no arquivo [`T2-Classificador-de-Genero-Animes.ipynb`](./T2-Classificador-de-Genero-Animes.ipynb).
+O código fonte está disponível no arquivo [`PUCRS_Aprendizado_de_Máquina_T2.ipynb`](./PUCRS_Aprendizado_de_Máquina_T2.ipynb).
 Basta seguir as instruções descritas no código para efetuar o treinamento e validação do modelo.
 
 O modelo já treinado está disponível em nosso [bucket S3](https://public-s3.debem.dev/model.pt).
